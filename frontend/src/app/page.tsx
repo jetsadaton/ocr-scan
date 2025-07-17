@@ -1,15 +1,24 @@
 "use client";
 
 import { useState } from 'react';
-import { Button, Container, Typography, Box, TextField, Paper } from '@mui/material';
+import { Button, Container, Typography, Box, TextField, Paper, Grid, CircularProgress } from '@mui/material';
 
 export default function Home() {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [ocrResult, setOcrResult] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedFiles(event.target.files);
+    const files = event.target.files;
+    if (files) {
+      setSelectedFiles(files);
+      const newImagePreviews: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        newImagePreviews.push(URL.createObjectURL(files[i]));
+      }
+      setImagePreviews(newImagePreviews);
+    }
   };
 
   const handleUpload = async () => {
@@ -74,57 +83,90 @@ export default function Home() {
               </Typography>
             )}
           </Box>
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ mt: 2, position: 'relative' }}>
             <Button
               variant="contained"
               color="primary"
               onClick={handleUpload}
               disabled={!selectedFiles || isLoading}
             >
-              {isLoading ? 'Processing...' : 'Upload & Process'}
+              Upload & Process
             </Button>
+            {isLoading && (
+              <CircularProgress
+                size={24}
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  marginTop: '-12px',
+                  marginLeft: '-12px',
+                }}
+              />
+            )}
           </Box>
         </Paper>
 
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          {imagePreviews.map((preview, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Paper elevation={2}>
+                <img src={preview} alt={`Preview ${index}`} style={{ width: '100%', height: 'auto' }} />
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+
         {ocrResult && (
-          <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
-            <Typography variant="h6">2. Review Extracted Data</Typography>
-            <Box component="form" noValidate autoComplete="off" sx={{ mt: 2 }}>
-              <TextField
-                fullWidth
-                label="Invoice Number"
-                defaultValue={ocrResult.data?.invoice_number || ''}
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Invoice Date"
-                defaultValue={ocrResult.data?.invoice_date || ''}
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Total Amount"
-                defaultValue={ocrResult.data?.total_amount || ''}
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                multiline
-                rows={10}
-                label="Raw Text"
-                defaultValue={ocrResult.data?.raw_text || ''}
-                variant="outlined"
-                sx={{ mb: 2 }}
-              />
-              <Button variant="contained" color="success">
-                Save Corrected Data
-              </Button>
-            </Box>
-          </Paper>
+          <Grid container spacing={4} sx={{ mt: 2 }}>
+            <Grid item xs={12} md={6}>
+              <Paper elevation={3} sx={{ p: 3 }}>
+                <Typography variant="h6">Document Viewer</Typography>
+                {/* Assuming the first preview is the document to be reviewed */}
+                <img src={imagePreviews[0]} alt="Document to review" style={{ width: '100%', height: 'auto', marginTop: '16px' }} />
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Paper elevation={3} sx={{ p: 3 }}>
+                <Typography variant="h6">Review Extracted Data</Typography>
+                <Box component="form" noValidate autoComplete="off" sx={{ mt: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Invoice Number"
+                    defaultValue={ocrResult.data?.invoice_number || ''}
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Invoice Date"
+                    defaultValue={ocrResult.data?.invoice_date || ''}
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Total Amount"
+                    defaultValue={ocrResult.data?.total_amount || ''}
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={10}
+                    label="Raw Text"
+                    defaultValue={ocrResult.data?.raw_text || ''}
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  />
+                  <Button variant="contained" color="success">
+                    Save Corrected Data
+                  </Button>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
         )}
       </Box>
     </Container>
